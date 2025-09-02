@@ -1,51 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import "./index.css";
-
-// Rain component
-const Rain = () => {
-  const drops = Array.from({ length: 30 });
-  return (
-    <div className="rain-container">
-      {drops.map((_, i) => (
-        <div
-          className="raindrop"
-          key={i}
-          style={{
-            left: `${Math.random() * 100}%`,
-            animationDelay: `${Math.random()}s`,
-          }}
-        ></div>
-      ))}
-    </div>
-  );
-};
-
-// Snow component
-const Snow = () => {
-  const flakes = Array.from({ length: 30 });
-  return (
-    <div className="snow-container">
-      {flakes.map((_, i) => (
-        <div
-          className="snowflake"
-          key={i}
-          style={{
-            left: `${Math.random() * 100}%`,
-            animationDelay: `${Math.random() * 2}s`,
-            fontSize: `${Math.random() * 16 + 10}px`,
-          }}
-        >
-          ❄️
-        </div>
-      ))}
-    </div>
-  );
-};
-
-// Lightning component
-const Lightning = () => (
-  <div className="lightning"></div>
-);
+import SearchBar from "./components/SearchBar";
+import CurrentWeather from "./components/CurrentWeather";
+import ForecastGrid from "./components/ForecastGrid";
 
 export default function App() {
   const [query, setQuery] = useState("");
@@ -101,7 +58,9 @@ export default function App() {
       )}&count=1`;
       const res = await fetch(url);
       const json = await res.json();
-      if (!json.results || json.results.length === 0) throw new Error("City not found");
+      if (!json.results || json.results.length === 0)
+        throw new Error("City not found");
+
       const { latitude, longitude, name, country } = json.results[0];
       fetchWeather(latitude, longitude);
       setCity(`${name}, ${country}`);
@@ -117,23 +76,11 @@ export default function App() {
     return () => clearTimeout(id);
   }, [query]);
 
-  const isRainy = data && ["rain", "storm"].includes(weatherCodeToEmoji(data.weathercode).anim);
-  const isSnowy = data && ["snow"].includes(weatherCodeToEmoji(data.weathercode).anim);
-  const isStormy = data && weatherCodeToEmoji(data.weathercode).anim === "storm";
-
   return (
     <div className="app-container">
       <div className="weather-card">
         <h1 className="app-title">🌤 Animated Weather</h1>
-
-        <div className="search-bar">
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Enter city (e.g., Mumbai)"
-          />
-          <button onClick={() => fetchCoordinates(query.trim())}>Search</button>
-        </div>
+        <SearchBar query={query} setQuery={setQuery} onSearch={() => fetchCoordinates(query.trim())} />
 
         <main className="weather-content">
           {loading ? (
@@ -142,37 +89,8 @@ export default function App() {
             <div className="error">{error}</div>
           ) : data ? (
             <>
-              <div className="current-weather">
-                <div className={`animated-icon ${weatherCodeToEmoji(data.weathercode).anim}`}>
-                  {weatherCodeToEmoji(data.weathercode).emoji}
-                </div>
-
-                {/* Add rain, snow, lightning effects */}
-                {isRainy && <Rain />}
-                {isSnowy && <Snow />}
-                {isStormy && <Lightning />}
-
-                <div className="temperature">{Math.round(data.temperature)}°C</div>
-                <div className="condition">Wind {data.windspeed} km/h</div>
-                <div className="details">
-                  {city} • {new Date(data.time).toLocaleTimeString()}
-                </div>
-              </div>
-
-              {forecast && (
-                <div className="forecast-grid">
-                  {forecast.time.slice(0, 4).map((day, i) => {
-                    const { emoji, anim } = weatherCodeToEmoji(forecast.weathercode[i]);
-                    return (
-                      <div className="forecast-card" key={day}>
-                        <div className="forecast-date">{new Date(day).toLocaleDateString("en-US", { weekday: "short" })}</div>
-                        <div className={`forecast-icon ${anim}`}>{emoji}</div>
-                        <div className="forecast-temp">{forecast.temperature_2m_max[i]}° / {forecast.temperature_2m_min[i]}°</div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
+              <CurrentWeather data={data} city={city} weatherCodeToEmoji={weatherCodeToEmoji} />
+              {forecast && <ForecastGrid forecast={forecast} weatherCodeToEmoji={weatherCodeToEmoji} />}
             </>
           ) : (
             <div className="placeholder">🔎 Search for a city to see the weather</div>
