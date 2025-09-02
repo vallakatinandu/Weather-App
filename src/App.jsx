@@ -13,6 +13,7 @@ export default function App() {
   const [error, setError] = useState(null);
   const controllerRef = useRef(null);
 
+  
   const weatherCodeToEmoji = (code) => {
     if ([0].includes(code)) return { emoji: "☀️", anim: "sunny" };
     if ([1, 2, 3].includes(code)) return { emoji: "⛅", anim: "partly-cloudy" };
